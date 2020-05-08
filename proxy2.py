@@ -18,6 +18,7 @@ from cStringIO import StringIO
 from subprocess import Popen, PIPE
 from HTMLParser import HTMLParser
 
+import hulattp
 
 def with_color(c, s):
     return "\x1b[%dm%s\x1b[0m" % (c, s)
@@ -61,6 +62,12 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
         self.log_message(format, *args)
 
     def do_CONNECT(self):
+        # custom by floyd +
+        # 如果域名不是hulaplanet.com，则仅转发即可，否则将socket升级为SSLSocket
+        if "hulaplanet.com" not in self.path:
+            self.connect_relay()
+            return
+        # custom by floyd -
         if os.path.isfile(self.cakey) and os.path.isfile(self.cacert) and os.path.isfile(self.certkey) and os.path.isdir(self.certdir):
             self.connect_intercept()
         else:
@@ -122,7 +129,7 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
 
         req = self
         content_length = int(req.headers.get('Content-Length', 0))
-        req_body = self.rfile.read(content_length) if content_length else None
+        req_body = self.rfile.read(content_length) if content_length else ""
 
         if req.path[0] == '/':
             if isinstance(self.connection, ssl.SSLSocket):
@@ -135,7 +142,6 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
             self.send_error(403)
             return
         elif req_body_modified is not None:
-            req_body = req_body_modified
             req.headers['Content-length'] = str(len(req_body))
 
         u = urlparse.urlsplit(req.path)
@@ -358,7 +364,8 @@ class ProxyRequestHandler(BaseHTTPRequestHandler):
                 print with_color(32, "==== RESPONSE BODY ====\n%s\n" % res_body_text)
 
     def request_handler(self, req, req_body):
-        pass
+        hulattp.pre_request(req, req_body)
+        return True
 
     def response_handler(self, req, req_body, res, res_body):
         pass
@@ -371,8 +378,8 @@ def test(HandlerClass=ProxyRequestHandler, ServerClass=ThreadingHTTPServer, prot
     if sys.argv[1:]:
         port = int(sys.argv[1])
     else:
-        port = 8080
-    server_address = ('::1', port)
+        port = 17777
+    server_address = ('', port)
 
     HandlerClass.protocol_version = protocol
     httpd = ServerClass(server_address, HandlerClass)
