@@ -78,7 +78,7 @@ def generate_headers(path, params, body):
 
 
 def pre_request(req, req_body):
-    segs = re.sub(r"http[s]://[\w.]+", "", req.path).split("?")
+    segs = re.sub(r"http[s]?://[\w.]+", "", req.path).split("?")
     path = segs[0]
     params = {}
     if len(segs) > 1:
@@ -86,7 +86,7 @@ def pre_request(req, req_body):
         for param_seg in param_segs:
             key_value = param_seg.split("=")
             params[key_value[0]] = key_value[1]
-    if "application/json" in req.headers["content-type"]:
+    if "content-type" in req.headers and "application/json" in req.headers["content-type"]:
         try:
             body = json.loads(req_body)
         except Exception as e:
