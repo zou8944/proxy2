@@ -4,7 +4,6 @@ import re
 import time
 import uuid
 
-
 def dict2str(dic):
     result = "{"
     for key in sorted(dic.keys(), reverse=True):
@@ -65,9 +64,10 @@ def generate_headers(path, params, body):
         if i == len(candidates) - 1:
             candidate_str += candidates[i]
         elif i % 2 == 0:
-            candidate_str += "{}|".format(candidates[i])
+            print candidates[i]
+            candidate_str += "%s|" % (candidates[i])
         else:
-            candidate_str += "{}&".format(candidates[i])
+            candidate_str += "%s&" % (candidates[i])
     candidate_str += "^"
     print candidate_str
     return {
